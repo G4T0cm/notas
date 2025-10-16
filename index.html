@@ -181,38 +181,27 @@ async function modifyMoney(id,isAdd){
 }
 
 // Retirar dinero → genera billete con plantilla
-async function withdrawMoney(id) {
+async function withdrawMoney(id){
   const amt = parseFloat(prompt('Cantidad a retirar:'));
-  if (isNaN(amt) || amt <= 0) return;
+  if(isNaN(amt) || amt <= 0) return;
   
   const ref = db.collection('accounts').doc(id);
   const doc = await ref.get();
-  if (!doc.exists) return alert('Cuenta no encontrada');
-  if (doc.data().balance < amt) return alert('Saldo insuficiente.');
-  
-  const code = generateCode(); // ID del billete
-  const exp = new Date();
-  exp.setDate(exp.getDate() + 7); // caduca en 1 semana
+  if(!doc.exists) return alert('Cuenta no encontrada');
+  if(doc.data().balance < amt) return alert('Saldo insuficiente.');
 
-  // Actualizar saldo y guardar billete
-  await ref.update({ balance: doc.data().balance - amt });
-  await db.collection('bills').doc(code).set({
-    from: id,
-    amount: amt,
-    expiresAt: exp.toISOString(),
-    redeemed: false
-  });
-  await db.collection('transactions').add({
-    from: id,
-    to: 'Billete',
-    amount: amt,
-    code,
-    timestamp: new Date().toISOString()
-  });
+  const code = generateCode();
+  const exp = new Date(); 
+  exp.setDate(exp.getDate() + 7);
 
-  // --- Generar imagen del billete ---
+  await ref.update({balance: doc.data().balance - amt});
+  await db.collection('bills').doc(code).set({from:id, amount:amt, expiresAt:exp.toISOString(), redeemed:false});
+  await db.collection('transactions').add({from:id, to:'Billete', amount:amt, code, timestamp:new Date().toISOString()});
+
+  // --- Generar imagen ---
   const template = new Image();
-  template.src = 'billete_template.png'; // Debe estar en la misma carpeta que tu HTML
+  template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png'; // RAW de GitHub
+  template.crossOrigin = "anonymous"; // necesario para exportar aDataURL
   template.onload = () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
@@ -220,24 +209,30 @@ async function withdrawMoney(id) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(template, 0, 0);
 
-    // Colocar el código abajo a la derecha
-    ctx.font = '30px Arial';
-    ctx.fillStyle = 'black';
+    ctx.font = 'bold 48px Arial';
+    ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
-    ctx.fillText(code, canvas.width - 20, canvas.height - 20);
+    ctx.fillText(code, canvas.width - 20, canvas.height - 20); // abajo a la derecha
 
-    // Convertir a DataURL
-    const dataUrl = canvas.toDataURL('image/png');
+    const container = document.getElementById('account-result');
+    container.className = 'result success';
+    container.style.display = 'block';
+    container.innerHTML = `Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br><canvas id="billeteCanvas"></canvas><br><button id="copyLink">Copiar enlace</button>`;
 
-    // Mostrar imagen y habilitar copiar enlace
-    const img = document.getElementById('billete-img');
-    img.src = dataUrl;
-    const btn = document.getElementById('copy-billete');
-    btn.style.display = 'inline-block';
-    btn.onclick = () => {
-      navigator.clipboard.writeText(dataUrl).then(() => alert('Enlace copiado al portapapeles'));
-    };
-  };
+    const billeteCanvas = document.getElementById('billeteCanvas');
+    billeteCanvas.width = canvas.width;
+    billeteCanvas.height = canvas.height;
+    billeteCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+    document.getElementById('copyLink').addEventListener('click', ()=>{
+      const url = canvas.toDataURL('image/png');
+      navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+    });
+  }
+
+  loadAccounts();
+}
+
 
   // Mostrar mensaje de éxito
   document.getElementById('account-result').className = 'result success';
@@ -356,3 +351,4 @@ loadAccounts();
 </script>
 </body>
 </html>
+
