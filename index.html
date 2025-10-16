@@ -99,7 +99,7 @@ footer{text-align:center;padding:15px;color:#7f8c8d;font-size:0.9rem;border-top:
   <h2>Billetes Activos</h2>
   <button id="check-bills" class="button-full">Comprobar Billetes</button>
   <table class="table" id="bills-table">
-    <thead><tr><th>Código</th><th>Cuenta Origen</th><th>Cantidad</th><th>Caduca</th><th>Estado</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Código</th><th>Cuenta Origen</th><th>Cantidad</th><th>Caduca</th><th>Estado</th><th>Eliminar</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -109,7 +109,7 @@ footer{text-align:center;padding:15px;color:#7f8c8d;font-size:0.9rem;border-top:
   <h2>Movimientos</h2>
   <button id="load-movements" class="button-full">Cargar Movimientos</button>
   <table class="table" id="movements-table">
-    <thead><tr><th>Código</th><th>De</th><th>Para</th><th>Cantidad</th><th>Fecha</th><th>Acción</th></tr></thead>
+    <thead><tr><th>Código</th><th>De</th><th>Para</th><th>Cantidad</th><th>Fecha</th><th>Eliminar</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -174,55 +174,53 @@ async function modifyMoney(id,isAdd){
   if(newBal<0)return alert('Saldo insuficiente.');
   await ref.update({balance:newBal});
   await db.collection('transactions').add({from:isAdd?'Banco':id,to:isAdd?id:'Banco',amount,timestamp:new Date().toISOString(),code:generateCode()});
-  document.getElementById('account-result').className='result success';
-  document.getElementById('account-result').style.display='block';
-  document.getElementById('account-result').innerHTML=`Transacción completada correctamente.`;
   loadAccounts();
+  const container = document.getElementById('account-result');
+  container.className='result success';
+  container.style.display='block';
+  container.innerHTML=`Transacción completada correctamente.`;
 }
 
-// Retirar dinero → genera billete con plantilla
+// Retirar dinero → generar billete con imagen
 async function withdrawMoney(id){
-  const amt = parseFloat(prompt('Cantidad a retirar:'));
-  if(isNaN(amt) || amt <= 0) return;
-  
-  const ref = db.collection('accounts').doc(id);
-  const doc = await ref.get();
-  if(!doc.exists) return alert('Cuenta no encontrada');
-  if(doc.data().balance < amt) return alert('Saldo insuficiente.');
+  const amt=parseFloat(prompt('Cantidad a retirar:'));
+  if(isNaN(amt)||amt<=0)return;
+  const ref=db.collection('accounts').doc(id);
+  const doc=await ref.get();
+  if(!doc.exists)return alert('Cuenta no encontrada');
+  if(doc.data().balance<amt)return alert('Saldo insuficiente.');
 
-  const code = generateCode();
-  const exp = new Date(); 
-  exp.setDate(exp.getDate() + 7);
+  const code=generateCode();
+  const exp=new Date(); exp.setDate(exp.getDate()+7);
 
-  await ref.update({balance: doc.data().balance - amt});
-  await db.collection('bills').doc(code).set({from:id, amount:amt, expiresAt:exp.toISOString(), redeemed:false});
-  await db.collection('transactions').add({from:id, to:'Billete', amount:amt, code, timestamp:new Date().toISOString()});
+  await ref.update({balance:doc.data().balance-amt});
+  await db.collection('bills').doc(code).set({from:id,amount:amt,expiresAt:exp.toISOString(),redeemed:false});
+  await db.collection('transactions').add({from:id,to:'Billete',amount:amt,code,timestamp:new Date().toISOString()});
 
   // --- Generar imagen ---
   const template = new Image();
-  template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png'; // RAW de GitHub
-  template.crossOrigin = "anonymous"; // necesario para exportar aDataURL
+  template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png';
+  template.crossOrigin = "anonymous";
   template.onload = () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
     canvas.height = template.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(template, 0, 0);
-
     ctx.font = 'bold 48px Arial';
     ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
-    ctx.fillText(code, canvas.width - 20, canvas.height - 20); // abajo a la derecha
+    ctx.fillText(code, canvas.width - 20, canvas.height - 20);
 
     const container = document.getElementById('account-result');
-    container.className = 'result success';
-    container.style.display = 'block';
-    container.innerHTML = `Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br><canvas id="billeteCanvas"></canvas><br><button id="copyLink">Copiar enlace</button>`;
+    container.className='result success';
+    container.style.display='block';
+    container.innerHTML=`Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br><canvas id="billeteCanvas"></canvas><br><button id="copyLink">Copiar enlace</button>`;
 
     const billeteCanvas = document.getElementById('billeteCanvas');
     billeteCanvas.width = canvas.width;
     billeteCanvas.height = canvas.height;
-    billeteCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    billeteCanvas.getContext('2d').drawImage(canvas,0,0);
 
     document.getElementById('copyLink').addEventListener('click', ()=>{
       const url = canvas.toDataURL('image/png');
@@ -233,21 +231,6 @@ async function withdrawMoney(id){
   loadAccounts();
 }
 
-
-  // Mostrar mensaje de éxito
-  document.getElementById('account-result').className = 'result success';
-  document.getElementById('account-result').style.display = 'block';
-  document.getElementById('account-result').innerHTML =
-    `Billete generado correctamente. Código: <b>${code}</b><br>Caduca el ${exp.toLocaleDateString()}`;
-  
-  loadAccounts();
-}
-
-
-function copyToClipboard(url){
-  navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
-}
-
 // Eliminar cuenta
 async function deleteAccount(id){
   if(!confirm('¿Estás seguro que deseas eliminar esta cuenta?'))return;
@@ -255,7 +238,7 @@ async function deleteAccount(id){
   loadAccounts();
 }
 
-// Transferir
+// Transferencia
 document.getElementById('transfer-btn').addEventListener('click',async()=>{
   const from=document.getElementById('from-account').value.trim();
   const to=document.getElementById('to-account').value.trim();
@@ -270,9 +253,10 @@ document.getElementById('transfer-btn').addEventListener('click',async()=>{
   await tRef.update({balance:tDoc.data().balance+amt});
   const code=generateCode();
   await db.collection('transactions').add({from,to,amount:amt,code,timestamp:new Date().toISOString()});
-  document.getElementById('transfer-result').className='result success';
-  document.getElementById('transfer-result').style.display='block';
-  document.getElementById('transfer-result').innerHTML=`Transferencia completada. Código: <b>${code}</b>`;
+  const container = document.getElementById('transfer-result');
+  container.className='result success';
+  container.style.display='block';
+  container.innerHTML=`Transferencia completada. Código: <b>${code}</b>`;
   loadAccounts();
 });
 
@@ -281,29 +265,29 @@ document.getElementById('redeem-btn').addEventListener('click',async()=>{
   const player=document.getElementById('redeem-player').value.trim();
   const code=document.getElementById('redeem-code').value.trim();
   if(!player||!code)return alert('Rellena todos los campos.');
-  const bRef=db.collection('bills').doc(code);const bDoc=await bRef.get();
+
+  const bRef=db.collection('bills').doc(code);
+  const bDoc=await bRef.get();
   if(!bDoc.exists)return alert('Billete no encontrado.');
   const b=bDoc.data();
   if(b.redeemed)return alert('Billete ya canjeado.');
   if(new Date(b.expiresAt)<new Date())return alert('Billete caducado.');
 
-  let accRef;
-  // buscar por nombre
+  let accRef=null;
   const q=await db.collection('accounts').where('owner','==',player).get();
   if(!q.empty) accRef=db.collection('accounts').doc(q.docs[0].id);
-  else{ // buscar por código de cuenta
-    const a=await db.collection('accounts').doc(player).get();
-    if(a.exists) accRef=a.ref;
-  }
-
+  else {const a=await db.collection('accounts').doc(player).get(); if(a.exists) accRef=a.ref;}
   if(!accRef)return alert('Cuenta o jugador no encontrado.');
+
   const doc=await accRef.get();
   await accRef.update({balance:doc.data().balance+b.amount});
   await bRef.update({redeemed:true});
   await db.collection('transactions').add({from:'Billete',to:accRef.id,amount:b.amount,code,timestamp:new Date().toISOString()});
-  document.getElementById('redeem-result').className='result success';
-  document.getElementById('redeem-result').style.display='block';
-  document.getElementById('redeem-result').innerHTML=`Billete de ${b.amount} canjeado correctamente en la cuenta <b>${accRef.id}</b>.`;
+
+  const container = document.getElementById('redeem-result');
+  container.className='result success';
+  container.style.display='block';
+  container.innerHTML=`Billete de ${b.amount} canjeado correctamente en la cuenta <b>${accRef.id}</b>.`;
   loadAccounts();
 });
 
@@ -316,16 +300,11 @@ document.getElementById('check-bills').addEventListener('click',async()=>{
   snap.forEach(doc=>{
     const b=doc.data();const exp=new Date(b.expiresAt);const estado=b.redeemed?'✅ Canjeado':(exp<new Date()?'❌ Caducado':'🟢 Activo');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${doc.id}</td><td>${b.from}</td><td>${b.amount}</td><td>${exp.toLocaleDateString()}</td><td>${estado}</td><td><button onclick="deleteBill('${doc.id}')">Eliminar</button></td>`;
+    tr.innerHTML=`<td>${doc.id}</td><td>${b.from}</td><td>${b.amount}</td><td>${exp.toLocaleDateString()}</td><td>${estado}</td>
+      <td><button onclick="deleteBill('${doc.id}')">Eliminar</button></td>`;
     tbody.appendChild(tr);
   });
 });
-
-async function deleteBill(code){
-  if(!confirm('¿Seguro que quieres eliminar este billete?')) return;
-  await db.collection('bills').doc(code).delete();
-  document.getElementById('check-bills').click();
-}
 
 // Movimientos
 document.getElementById('load-movements').addEventListener('click',async()=>{
@@ -336,13 +315,22 @@ document.getElementById('load-movements').addEventListener('click',async()=>{
   snap.forEach(doc=>{
     const t=doc.data();
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${t.code}</td><td>${t.from}</td><td>${t.to}</td><td>${t.amount}</td><td>${new Date(t.timestamp).toLocaleString()}</td><td><button onclick="deleteTransaction('${doc.id}')">Eliminar</button></td>`;
+    tr.innerHTML=`<td>${t.code}</td><td>${t.from}</td><td>${t.to}</td><td>${t.amount}</td><td>${new Date(t.timestamp).toLocaleString()}</td>
+      <td><button onclick="deleteTransaction('${doc.id}')">Eliminar</button></td>`;
     tbody.appendChild(tr);
   });
 });
 
+// Eliminar billete
+async function deleteBill(id){
+  if(!confirm('¿Eliminar billete?'))return;
+  await db.collection('bills').doc(id).delete();
+  document.getElementById('check-bills').click();
+}
+
+// Eliminar movimiento
 async function deleteTransaction(id){
-  if(!confirm('¿Seguro que quieres eliminar este movimiento?')) return;
+  if(!confirm('¿Eliminar movimiento?'))return;
   await db.collection('transactions').doc(id).delete();
   document.getElementById('load-movements').click();
 }
@@ -351,4 +339,3 @@ loadAccounts();
 </script>
 </body>
 </html>
-
