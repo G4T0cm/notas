@@ -221,7 +221,7 @@ async function withdrawMoney(id){
     ctx.font = 'bold 48px Arial';
     ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
-    ctx.fillText(code, canvas.width - 20, canvas.height - 20);
+    ctx.fillText(code, canvas.width - 20, canvas.height - 40);
 
     // Convertir a base64
     const base64Image = canvas.toDataURL('image/png').split(',')[1];
@@ -384,5 +384,6 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
