@@ -192,17 +192,49 @@ async function modifyMoney(id,isAdd){
 async function withdrawMoney(id){
   const amt=parseFloat(prompt('Cantidad a retirar:'));
   if(isNaN(amt)||amt<=0)return;
-  const ref=db.collection('accounts').doc(id);const doc=await ref.get();
+  const ref=db.collection('accounts').doc(id);
+  const doc=await ref.get();
   if(!doc.exists)return alert('Cuenta no encontrada');
   if(doc.data().balance<amt)return alert('Saldo insuficiente.');
+
   const code=generateCode();
-  const exp=new Date();exp.setDate(exp.getDate()+7);
+  const exp=new Date(); exp.setDate(exp.getDate()+7);
+
   await ref.update({balance:doc.data().balance-amt});
   await db.collection('bills').doc(code).set({from:id,amount:amt,expiresAt:exp.toISOString(),redeemed:false});
   await db.collection('transactions').add({from:id,to:'Billete',amount:amt,code,timestamp:new Date().toISOString()});
-  document.getElementById('account-result').className='result success';
-  document.getElementById('account-result').style.display='block';
-  document.getElementById('account-result').innerHTML=`Billete generado correctamente. Código: <b>${code}</b><br>Caduca el ${exp.toLocaleDateString()}`;
+
+  // --- Generar imagen ---
+  const template = new Image();
+  template.src = 'billete_template.png';
+  template.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = template.width;
+    canvas.height = template.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(template, 0, 0);
+
+    ctx.font = 'bold 48px Arial';
+    ctx.fillStyle = 'red';
+    ctx.textAlign = 'center';
+    ctx.fillText(code, canvas.width/2, 100); // ajusta la altura según tu plantilla
+
+    const container = document.getElementById('account-result');
+    container.className='result success';
+    container.style.display='block';
+    container.innerHTML=`Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br><canvas id="billeteCanvas"></canvas><br><button id="copyLink">Copiar enlace</button>`;
+
+    const billeteCanvas = document.getElementById('billeteCanvas');
+    billeteCanvas.width = canvas.width;
+    billeteCanvas.height = canvas.height;
+    billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+
+    document.getElementById('copyLink').addEventListener('click', ()=>{
+      const url = canvas.toDataURL('image/png');
+      navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+    });
+  }
+
   loadAccounts();
 }
 
@@ -298,3 +330,4 @@ loadAccounts();
 </script>
 </body>
 </html>
+
