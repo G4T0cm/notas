@@ -195,41 +195,86 @@ async function withdrawMoney(id){
 
   await ref.update({balance:doc.data().balance-amt});
   await db.collection('bills').doc(code).set({from:id,amount:amt,expiresAt:exp.toISOString(),redeemed:false});
-  await db.collection('transactions').add({from:id,to:'Billete',amount:amt,code,timestamp:new Date().toISOString()});
+
+  // --- Crear transacción ---
+  const txnRef = await db.collection('transactions').add({
+    from:id,
+    to:'Billete',
+    amount:amt,
+    code:code,
+    timestamp:new Date().toISOString()
+  });
+
+  const txnId = txnRef.id;
 
   // --- Generar imagen ---
   const template = new Image();
   template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png';
   template.crossOrigin = "anonymous";
-  template.onload = () => {
+  template.onload = async () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
     canvas.height = template.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(template, 0, 0);
+
     ctx.font = 'bold 48px Arial';
     ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
     ctx.fillText(code, canvas.width - 20, canvas.height - 20);
 
-    const container = document.getElementById('account-result');
-    container.className='result success';
-    container.style.display='block';
-    container.innerHTML=`Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br><canvas id="billeteCanvas"></canvas><br><button id="copyLink">Copiar enlace</button>`;
+    // Convertir a base64
+    const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
-    const billeteCanvas = document.getElementById('billeteCanvas');
-    billeteCanvas.width = canvas.width;
-    billeteCanvas.height = canvas.height;
-    billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+    // --- Subir a GitHub ---
+    const githubUser = 'G4T0cm';
+    const githubRepo = 'notas';
+    const path = `billetes/${code}.png`; // carpeta billetes en tu repo
+    const githubToken = 'TU_GITHUB_PERSONAL_ACCESS_TOKEN'; // token con permisos repo
+    const apiUrl = `https://api.github.com/repos/${githubUser}/${githubRepo}/contents/${path}`;
 
-    document.getElementById('copyLink').addEventListener('click', ()=>{
-      const url = canvas.toDataURL('image/png');
-      navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
-    });
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Agregar billete ${code}`,
+          content: base64Image
+        })
+      });
+
+      const data = await response.json();
+      const url = data.content && data.content.download_url ? data.content.download_url : null;
+
+      const container = document.getElementById('account-result');
+      container.className='result success';
+      container.style.display='block';
+      container.innerHTML=`Billete generado correctamente.<br>Caduca el ${exp.toLocaleDateString()}<br>
+      ID de transacción: <b>${txnId}</b><br>
+      <canvas id="billeteCanvas"></canvas><br>
+      ${url ? `<button id="copyLink">Copiar enlace</button>` : 'Error subiendo a GitHub.'}`;
+
+      const billeteCanvas = document.getElementById('billeteCanvas');
+      billeteCanvas.width = canvas.width;
+      billeteCanvas.height = canvas.height;
+      billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+
+      if(url){
+        document.getElementById('copyLink').addEventListener('click', ()=>{
+          navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+        });
+      }
+    } catch(err){
+      alert('Error subiendo billete a GitHub: '+err.message);
+    }
   }
 
   loadAccounts();
 }
+
 
 // Eliminar cuenta
 async function deleteAccount(id){
@@ -339,3 +384,4 @@ loadAccounts();
 </script>
 </body>
 </html>
+
