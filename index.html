@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banco de Notas De los buscadores</title>
-<style> * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; } body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; } .container { max-width: 800px; width: 100%; background-color: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); overflow: hidden; } header { background: linear-gradient(90deg, #2c3e50, #4a6491); color: white; padding: 20px; text-align: center; } header h1 { font-size: 2.2rem; margin-bottom: 5px; } header p { font-size: 1rem; opacity: 0.8; } .tabs { display: flex; background-color: #34495e; } .tab { flex: 1; padding: 15px; text-align: center; color: white; cursor: pointer; transition: background-color 0.3s; font-weight: bold; } .tab.active { background-color: #2c3e50; border-bottom: 3px solid #fdbb2d; } .tab:hover:not(.active) { background-color: #3a506b; } .content { padding: 30px; } .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.5s; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } .form-group { margin-bottom: 20px; } label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; } textarea, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s; } textarea { min-height: 200px; resize: vertical; } textarea:focus, input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); } button { background: linear-gradient(90deg, #3498db, #2980b9); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s; display: inline-block; margin: 5px; } button:hover { background: linear-gradient(90deg, #2980b9, #2573a7); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); } .button-full { display: block; width: 100%; margin: 0; } .result { margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #f8f9fa; border-left: 4px solid #3498db; display: none; } .result.success { border-left-color: #2ecc71; background-color: #e8f8ef; } .result.error { border-left-color: #e74c3c; background-color: #fdedec; } .note-display { margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f8f9fa; border: 1px solid #ddd; white-space: pre-wrap; word-break: break-word; } .code { font-family: monospace; font-size: 1.2rem; font-weight: bold; color: #2c3e50; background-color: #ecf0f1; padding: 10px; border-radius: 5px; text-align: center; letter-spacing: 2px; margin: 10px 0; } .file-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #ddd; } .file-section h3 { color: #2c3e50; margin-bottom: 10px; } footer { text-align: center; padding: 15px; color: #7f8c8d; font-size: 0.9rem; border-top: 1px solid #ecf0f1; } .loading { text-align: center; padding: 20px; color: #3498db; } @media (max-width: 600px) { .container { border-radius: 10px; } header h1 { font-size: 1.8rem; } .content { padding: 20px; } } </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Banco de Notas De los buscadores</h1>
-            <p></p>
         </header>
 
         <div class="tabs">
             <div class="tab active" data-tab="create">Crear Nota</div>
             <div class="tab" data-tab="consult">Consultar Nota</div>
+            <div class="tab" data-tab="list">Lista de Notas</div>
         </div>
 
         <div class="content">
+            <!-- Crear Nota -->
             <div id="create-tab" class="tab-content active">
                 <h2>Crear Nueva Nota</h2>
                 <div class="form-group">
@@ -26,13 +26,13 @@
                     <textarea id="note-content" placeholder="Escribe tu apunte aquí..."></textarea>
                 </div>
                 <button id="save-note" class="button-full">Guardar Nota</button>
-
                 <div id="save-result" class="result">
                     <p>Tu nota ha sido guardada correctamente. Código:</p>
                     <div class="code" id="generated-code"></div>
                 </div>
             </div>
 
+            <!-- Consultar Nota -->
             <div id="consult-tab" class="tab-content">
                 <h2>Consultar Nota</h2>
                 <div class="form-group">
@@ -40,11 +40,17 @@
                     <input type="text" id="note-code" placeholder="Ejemplo: A1B2C3">
                 </div>
                 <button id="consult-note" class="button-full">Consultar</button>
-
                 <div id="consult-result" class="result">
                     <p>Contenido:</p>
                     <div class="note-display" id="note-display"></div>
                 </div>
+            </div>
+
+            <!-- Lista de Notas -->
+            <div id="list-tab" class="tab-content">
+                <h2>Lista de Notas Guardadas</h2>
+                <button id="load-notes" class="button-full">Mostrar Todos los Códigos</button>
+                <div id="notes-list" class="note-display"></div>
             </div>
         </div>
 
@@ -58,20 +64,19 @@
     <script>
         /* 🔧 Configura tu Firebase aquí */
         const firebaseConfig = {
-        apiKey: "AIzaSyAe26JxjylsYuajP6iXQonmUfS29FWhCm0",
-        authDomain: "gatonotas-181b2.firebaseapp.com",
-        projectId: "gatonotas-181b2",
-        storageBucket: "gatonotas-181b2.appspot.com",
-        messagingSenderId: "177659023483",
-        appId: "1:177659023483:web:566c7125e67e450545d2de",
-        measurementId: "G-JCEEDFTNKF"
+            apiKey: "AIzaSyAe26JxjylsYuajP6iXQonmUfS29FWhCm0",
+            authDomain: "gatonotas-181b2.firebaseapp.com",
+            projectId: "gatonotas-181b2",
+            storageBucket: "gatonotas-181b2.appspot.com",
+            messagingSenderId: "177659023483",
+            appId: "1:177659023483:web:566c7125e67e450545d2de",
+            measurementId: "G-JCEEDFTNKF"
         };
-
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1428428694698987520/toA7Uf_c0ipXn4Bn0Gu6gICRnrH49lfq4_052CP2CM4_As_1KKssXygY5Ic_6oMQvWH7"; // 👈 pega tu webhook aquí
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1428468208725397667/GVAb3u0dqWNBKRMW33QZxcynxtmCO4JBmXJNmWr2nGeAxfbC8qh_oXc2jw02JWSpVfYD";
 
         // DOM elements
         const tabs = document.querySelectorAll('.tab');
@@ -84,6 +89,8 @@
         const generatedCode = document.getElementById('generated-code');
         const consultResult = document.getElementById('consult-result');
         const noteDisplay = document.getElementById('note-display');
+        const loadNotesBtn = document.getElementById('load-notes');
+        const notesList = document.getElementById('notes-list');
 
         // Cambiar pestañas
         tabs.forEach(tab => {
@@ -111,14 +118,12 @@
             if (!content) return alert('Escribe algo antes de guardar.');
 
             const code = generateCode();
-
             try {
                 await db.collection('notes').doc(code).set({
                     content,
                     createdAt: new Date().toISOString()
                 });
 
-                // Mostrar resultado
                 generatedCode.textContent = code;
                 saveResult.className = 'result success';
                 saveResult.style.display = 'block';
@@ -137,7 +142,6 @@
                         }]
                     })
                 });
-
             } catch (error) {
                 console.error('Error guardando nota:', error);
                 alert('Error al guardar la nota.');
@@ -165,6 +169,57 @@
             } catch (error) {
                 console.error('Error consultando nota:', error);
                 alert('Error al consultar la nota.');
+            }
+        });
+
+        // Listar todas las notas con vista previa y borrar
+        loadNotesBtn.addEventListener('click', async () => {
+            notesList.innerHTML = '<p class="loading">Cargando...</p>';
+
+            try {
+                const snapshot = await db.collection('notes').get();
+                if (snapshot.empty) {
+                    notesList.innerHTML = '<p>No hay notas guardadas.</p>';
+                    return;
+                }
+
+                notesList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const noteDiv = document.createElement('div');
+                    noteDiv.style.display = 'flex';
+                    noteDiv.style.flexDirection = 'column';
+                    noteDiv.style.padding = '10px';
+                    noteDiv.style.marginBottom = '10px';
+                    noteDiv.style.border = '1px solid #ddd';
+                    noteDiv.style.borderRadius = '5px';
+                    noteDiv.style.backgroundColor = '#fefefe';
+
+                    noteDiv.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span><strong>${doc.id}</strong></span>
+                            <button style="background-color:#e74c3c;padding:5px 10px;border:none;border-radius:5px;color:white;cursor:pointer;">Borrar</button>
+                        </div>
+                        <div style="margin-top:5px; color:#555; white-space: pre-wrap;">${doc.data().content}</div>
+                    `;
+
+                    const deleteBtn = noteDiv.querySelector('button');
+                    deleteBtn.addEventListener('click', async () => {
+                        if (confirm(`¿Seguro que quieres borrar la nota ${doc.id}?`)) {
+                            try {
+                                await db.collection('notes').doc(doc.id).delete();
+                                noteDiv.remove();
+                            } catch (error) {
+                                alert('Error al borrar la nota.');
+                                console.error(error);
+                            }
+                        }
+                    });
+
+                    notesList.appendChild(noteDiv);
+                });
+            } catch (error) {
+                console.error('Error cargando notas:', error);
+                notesList.innerHTML = '<p>Error al cargar las notas.</p>';
             }
         });
     </script>
