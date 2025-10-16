@@ -1,229 +1,300 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Notas De los buscadores</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banco Central - FiveM</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+body{background:linear-gradient(135deg,#000000,#434343);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;}
+.container{max-width:1000px;width:100%;background-color:rgba(255,255,255,0.95);border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.3);overflow:hidden;}
+header{background:linear-gradient(90deg,#2c3e50,#4a6491);color:white;padding:20px;text-align:center;}
+header h1{font-size:2.2rem;margin-bottom:5px;}
+.tabs{display:flex;background-color:#34495e;}
+.tab{flex:1;padding:15px;text-align:center;color:white;cursor:pointer;transition:background-color 0.3s;font-weight:bold;}
+.tab.active{background-color:#2c3e50;border-bottom:3px solid #fdbb2d;}
+.tab:hover:not(.active){background-color:#3a506b;}
+.content{padding:30px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;animation:fadeIn 0.5s;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.form-group{margin-bottom:20px;}
+label{display:block;margin-bottom:8px;font-weight:600;color:#2c3e50;}
+input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem;transition:border-color 0.3s;}
+input:focus,select:focus{outline:none;border-color:#3498db;box-shadow:0 0 0 2px rgba(52,152,219,0.2);}
+button{background:linear-gradient(90deg,#3498db,#2980b9);color:white;border:none;padding:12px 25px;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:600;transition:all 0.3s;margin:5px;}
+button:hover{background:linear-gradient(90deg,#2980b9,#2573a7);transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+button.delete{background:linear-gradient(90deg,#c0392b,#e74c3c);}
+button.delete:hover{background:linear-gradient(90deg,#a93226,#c0392b);}
+.button-full{display:block;width:100%;margin:0;}
+.result{margin-top:20px;padding:15px;border-radius:8px;background-color:#f8f9fa;border-left:4px solid #3498db;display:none;}
+.result.success{border-left-color:#2ecc71;background-color:#e8f8ef;}
+.result.error{border-left-color:#e74c3c;background-color:#fdedec;}
+.table{width:100%;border-collapse:collapse;margin-top:20px;}
+.table th,.table td{border:1px solid #ddd;padding:8px;text-align:center;}
+.search-input{margin-bottom:15px;}
+footer{text-align:center;padding:15px;color:#7f8c8d;font-size:0.9rem;border-top:1px solid #ecf0f1;}
+</style>
 </head>
-    <style> * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; } body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; } .container { max-width: 800px; width: 100%; background-color: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); overflow: hidden; } header { background: linear-gradient(90deg, #2c3e50, #4a6491); color: white; padding: 20px; text-align: center; } header h1 { font-size: 2.2rem; margin-bottom: 5px; } header p { font-size: 1rem; opacity: 0.8; } .tabs { display: flex; background-color: #34495e; } .tab { flex: 1; padding: 15px; text-align: center; color: white; cursor: pointer; transition: background-color 0.3s; font-weight: bold; } .tab.active { background-color: #2c3e50; border-bottom: 3px solid #fdbb2d; } .tab:hover:not(.active) { background-color: #3a506b; } .content { padding: 30px; } .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.5s; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } .form-group { margin-bottom: 20px; } label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; } textarea, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s; } textarea { min-height: 200px; resize: vertical; } textarea:focus, input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); } button { background: linear-gradient(90deg, #3498db, #2980b9); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s; display: inline-block; margin: 5px; } button:hover { background: linear-gradient(90deg, #2980b9, #2573a7); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); } .button-full { display: block; width: 100%; margin: 0; } .result { margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #f8f9fa; border-left: 4px solid #3498db; display: none; } .result.success { border-left-color: #2ecc71; background-color: #e8f8ef; } .result.error { border-left-color: #e74c3c; background-color: #fdedec; } .note-display { margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f8f9fa; border: 1px solid #ddd; white-space: pre-wrap; word-break: break-word; } .code { font-family: monospace; font-size: 1.2rem; font-weight: bold; color: #2c3e50; background-color: #ecf0f1; padding: 10px; border-radius: 5px; text-align: center; letter-spacing: 2px; margin: 10px 0; } .file-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #ddd; } .file-section h3 { color: #2c3e50; margin-bottom: 10px; } footer { text-align: center; padding: 15px; color: #7f8c8d; font-size: 0.9rem; border-top: 1px solid #ecf0f1; } .loading { text-align: center; padding: 20px; color: #3498db; } @media (max-width: 600px) { .container { border-radius: 10px; } header h1 { font-size: 1.8rem; } .content { padding: 20px; } } </style>
 <body>
-    <div class="container">
-        <header>
-            <h1>Banco de Notas De los buscadores</h1>
-        </header>
+<div class="container">
+<header>
+<h1>Banco Central - FiveM</h1>
+<p>Gestiona cuentas, transferencias, billetes y movimientos</p>
+</header>
 
-        <div class="tabs">
-            <div class="tab active" data-tab="create">Crear Nota</div>
-            <div class="tab" data-tab="consult">Consultar Nota</div>
-            <div class="tab" data-tab="list">Lista de Notas</div>
-        </div>
+<div class="tabs">
+  <div class="tab active" data-tab="create">Crear Cuenta</div>
+  <div class="tab" data-tab="accounts">Cuentas</div>
+  <div class="tab" data-tab="transfer">Transferencia</div>
+  <div class="tab" data-tab="cashout">Canjear Billetes</div>
+  <div class="tab" data-tab="bills">Billetes</div>
+  <div class="tab" data-tab="list">Movimientos</div>
+</div>
 
-        <div class="content">
-            <!-- Crear Nota -->
-            <div id="create-tab" class="tab-content active">
-                <h2>Crear Nueva Nota</h2>
-                <div class="form-group">
-                    <label for="note-content">Contenido:</label>
-                    <textarea id="note-content" placeholder="Escribe tu apunte aquí..."></textarea>
-                </div>
-                <button id="save-note" class="button-full">Guardar Nota</button>
-                <div id="save-result" class="result">
-                    <p>Tu nota ha sido guardada correctamente. Código:</p>
-                    <div class="code" id="generated-code"></div>
-                </div>
-            </div>
+<div class="content">
+<!-- Crear Cuenta -->
+<div id="create-tab" class="tab-content active">
+  <h2>Crear Nueva Cuenta</h2>
+  <div class="form-group">
+    <label for="account-owner">Nombre del jugador:</label>
+    <input type="text" id="account-owner" placeholder="Ejemplo: Juan">
+  </div>
+  <button id="create-account" class="button-full">Crear Cuenta</button>
+  <div id="create-result" class="result"></div>
+</div>
 
-            <!-- Consultar Nota -->
-            <div id="consult-tab" class="tab-content">
-                <h2>Consultar Nota</h2>
-                <div class="form-group">
-                    <label for="note-code">Código:</label>
-                    <input type="text" id="note-code" placeholder="Ejemplo: A1B2C3">
-                </div>
-                <button id="consult-note" class="button-full">Consultar</button>
-                <div id="consult-result" class="result">
-                    <p>Contenido:</p>
-                    <div class="note-display" id="note-display"></div>
-                </div>
-            </div>
+<!-- Cuentas -->
+<div id="accounts-tab" class="tab-content">
+  <h2>Lista de Cuentas</h2>
+  <input type="text" id="search-account" class="search-input" placeholder="Buscar por nombre o número de cuenta...">
+  <table class="table" id="accounts-table">
+    <thead><tr><th>Número de Cuenta</th><th>Jugador</th><th>Balance</th><th>Acciones</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="account-result" class="result"></div>
+</div>
 
-            <!-- Lista de Notas -->
-            <div id="list-tab" class="tab-content">
-                <h2>Lista de Notas Guardadas</h2>
-                <button id="load-notes" class="button-full">Mostrar Todos los Códigos</button>
-                <div id="notes-list" class="note-display"></div>
-            </div>
-        </div>
+<!-- Transferencia -->
+<div id="transfer-tab" class="tab-content">
+  <h2>Realizar Transferencia</h2>
+  <div class="form-group"><label>Cuenta Origen:</label><input type="text" id="from-account"></div>
+  <div class="form-group"><label>Cuenta Destino:</label><input type="text" id="to-account"></div>
+  <div class="form-group"><label>Cantidad:</label><input type="number" id="transfer-amount"></div>
+  <button id="transfer-btn" class="button-full">Transferir</button>
+  <div id="transfer-result" class="result"></div>
+</div>
 
-        <footer>Banco de Notas - por Gato</footer>
-    </div>
+<!-- Canjear Billetes -->
+<div id="cashout-tab" class="tab-content">
+  <h2>Canjear Billete</h2>
+  <div class="form-group">
+    <label>Jugador o Cuenta:</label>
+    <input type="text" id="redeem-player" placeholder="Nombre o código de cuenta" list="account-list">
+    <datalist id="account-list"></datalist>
+  </div>
+  <div class="form-group"><label>Código del Billete:</label><input type="text" id="redeem-code"></div>
+  <button id="redeem-btn" class="button-full">Canjear Billete</button>
+  <div id="redeem-result" class="result"></div>
+</div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+<!-- Billetes Activos -->
+<div id="bills-tab" class="tab-content">
+  <h2>Billetes Activos</h2>
+  <button id="check-bills" class="button-full">Comprobar Billetes</button>
+  <table class="table" id="bills-table">
+    <thead><tr><th>Código</th><th>Cuenta Origen</th><th>Cantidad</th><th>Caduca</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    <script>
-        /* 🔧 Configura tu Firebase aquí */
-        const firebaseConfig = {
-            apiKey: "AIzaSyAe26JxjylsYuajP6iXQonmUfS29FWhCm0",
-            authDomain: "gatonotas-181b2.firebaseapp.com",
-            projectId: "gatonotas-181b2",
-            storageBucket: "gatonotas-181b2.appspot.com",
-            messagingSenderId: "177659023483",
-            appId: "1:177659023483:web:566c7125e67e450545d2de",
-            measurementId: "G-JCEEDFTNKF"
-        };
+<!-- Movimientos -->
+<div id="list-tab" class="tab-content">
+  <h2>Movimientos</h2>
+  <button id="load-movements" class="button-full">Cargar Movimientos</button>
+  <table class="table" id="movements-table">
+    <thead><tr><th>Código</th><th>De</th><th>Para</th><th>Cantidad</th><th>Fecha</th><th>Acción</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+</div>
+<footer>Banco Central - FiveM</footer>
+</div>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAe26JxjylsYuajP6iXQonmUfS29FWhCm0",authDomain:"gatonotas-181b2.firebaseapp.com",projectId:"gatonotas-181b2",storageBucket:"gatonotas-181b2.appspot.com",messagingSenderId:"177659023483",appId:"1:177659023483:web:566c7125e67e450545d2de"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
 
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1428468208725397667/GVAb3u0dqWNBKRMW33QZxcynxtmCO4JBmXJNmWr2nGeAxfbC8qh_oXc2jw02JWSpVfYD";
+function generateCode(){const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let c='';for(let i=0;i<6;i++)c+=chars.charAt(Math.floor(Math.random()*chars.length));return c;}
 
-        // DOM elements
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const noteContent = document.getElementById('note-content');
-        const noteCode = document.getElementById('note-code');
-        const saveBtn = document.getElementById('save-note');
-        const consultBtn = document.getElementById('consult-note');
-        const saveResult = document.getElementById('save-result');
-        const generatedCode = document.getElementById('generated-code');
-        const consultResult = document.getElementById('consult-result');
-        const noteDisplay = document.getElementById('note-display');
-        const loadNotesBtn = document.getElementById('load-notes');
-        const notesList = document.getElementById('notes-list');
+const tabs=document.querySelectorAll('.tab');
+const contents=document.querySelectorAll('.tab-content');
+tabs.forEach(t=>t.addEventListener('click',()=>{tabs.forEach(x=>x.classList.remove('active'));contents.forEach(c=>c.classList.remove('active'));t.classList.add('active');document.getElementById(`${t.dataset.tab}-tab`).classList.add('active');}));
 
-        // Cambiar pestañas
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-                saveResult.style.display = 'none';
-                consultResult.style.display = 'none';
-            });
-        });
+// Crear cuenta
+document.getElementById('create-account').addEventListener('click',async()=>{
+  const owner=document.getElementById('account-owner').value.trim();
+  if(!owner)return alert('Introduce un nombre.');
+  const id=generateCode();
+  await db.collection('accounts').doc(id).set({owner,balance:0,createdAt:new Date().toISOString()});
+  document.getElementById('create-result').className='result success';
+  document.getElementById('create-result').style.display='block';
+  document.getElementById('create-result').innerHTML=`Cuenta creada correctamente. Número de cuenta: <b>${id}</b>`;
+  document.getElementById('account-owner').value='';
+  loadAccounts();
+});
 
-        // Generar código aleatorio
-        function generateCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-            return code;
-        }
+// Cargar cuentas
+async function loadAccounts(){
+  const tbody=document.querySelector('#accounts-table tbody');
+  tbody.innerHTML='<tr><td colspan="4">Cargando...</td></tr>';
+  const snap=await db.collection('accounts').orderBy('owner').get();
+  tbody.innerHTML='';
+  const dataList=document.getElementById('account-list');
+  dataList.innerHTML='';
+  snap.forEach(doc=>{
+    const d=doc.data();
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${doc.id}</td><td>${d.owner}</td><td>${d.balance}</td>
+      <td>
+        <button onclick="modifyMoney('${doc.id}',true)">Añadir</button>
+        <button onclick="modifyMoney('${doc.id}',false)">Quitar</button>
+        <button onclick="withdrawMoney('${doc.id}')">Retirar</button>
+        <button class="delete" onclick="deleteAccount('${doc.id}')">Eliminar</button>
+      </td>`;
+    tbody.appendChild(tr);
+    // Autocompletar
+    dataList.innerHTML+=`<option value="${doc.id}">${d.owner}</option>`;
+  });
+  if(snap.empty)tbody.innerHTML='<tr><td colspan="4">No hay cuentas.</td></tr>';
+}
 
-        // Guardar nota en Firebase
-        saveBtn.addEventListener('click', async () => {
-            const content = noteContent.value.trim();
-            if (!content) return alert('Escribe algo antes de guardar.');
+// Añadir / quitar
+async function modifyMoney(id,isAdd){
+  const amount=parseFloat(prompt(isAdd?'Cantidad a añadir:':'Cantidad a quitar:'));
+  if(isNaN(amount)||amount<=0)return;
+  const ref=db.collection('accounts').doc(id);const doc=await ref.get();
+  if(!doc.exists)return;
+  const newBal=isAdd?doc.data().balance+amount:doc.data().balance-amount;
+  if(newBal<0)return alert('Saldo insuficiente.');
+  await ref.update({balance:newBal});
+  await db.collection('transactions').add({from:isAdd?'Banco':id,to:isAdd?id:'Banco',amount,timestamp:new Date().toISOString(),code:generateCode()});
+  loadAccounts();
+  document.getElementById('account-result').className='result success';
+  document.getElementById('account-result').style.display='block';
+  document.getElementById('account-result').innerHTML=`Transacción completada correctamente.`;
+}
 
-            const code = generateCode();
-            try {
-                await db.collection('notes').doc(code).set({
-                    content,
-                    createdAt: new Date().toISOString()
-                });
+// Retirar dinero → genera billete
+async function withdrawMoney(id){
+  const amt=parseFloat(prompt('Cantidad a retirar:'));
+  if(isNaN(amt)||amt<=0)return;
+  const ref=db.collection('accounts').doc(id);const doc=await ref.get();
+  if(!doc.exists)return alert('Cuenta no encontrada');
+  if(doc.data().balance<amt)return alert('Saldo insuficiente.');
+  const code=generateCode();
+  const exp=new Date();exp.setDate(exp.getDate()+7);
+  await ref.update({balance:doc.data().balance-amt});
+  await db.collection('bills').doc(code).set({from:id,amount:amt,expiresAt:exp.toISOString(),redeemed:false});
+  await db.collection('transactions').add({from:id,to:'Billete',amount:amt,code,timestamp:new Date().toISOString()});
+  document.getElementById('account-result').className='result success';
+  document.getElementById('account-result').style.display='block';
+  document.getElementById('account-result').innerHTML=`Billete generado correctamente. Código: <b>${code}</b><br>Caduca el ${exp.toLocaleDateString()}`;
+  loadAccounts();
+}
 
-                generatedCode.textContent = code;
-                saveResult.className = 'result success';
-                saveResult.style.display = 'block';
-                noteContent.value = '';
+// Eliminar cuenta
+async function deleteAccount(id){
+  if(!confirm('¿Estás seguro que deseas eliminar esta cuenta?'))return;
+  await db.collection('accounts').doc(id).delete();
+  loadAccounts();
+}
 
-                // Enviar a Discord
-                fetch(DISCORD_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: "Banco de Notas",
-                        embeds: [{
-                            title: "📝 Nueva nota guardada",
-                            description: `**Código:** ${code}\n**Contenido:**\n${content}`,
-                            color: 5814783
-                        }]
-                    })
-                });
-            } catch (error) {
-                console.error('Error guardando nota:', error);
-                alert('Error al guardar la nota.');
-            }
-        });
+// Transferir
+document.getElementById('transfer-btn').addEventListener('click',async()=>{
+  const from=document.getElementById('from-account').value.trim();
+  const to=document.getElementById('to-account').value.trim();
+  const amt=parseFloat(document.getElementById('transfer-amount').value);
+  if(!from||!to||isNaN(amt)||amt<=0)return;
+  if(from===to)return alert('No puedes transferir a la misma cuenta.');
+  const fRef=db.collection('accounts').doc(from),tRef=db.collection('accounts').doc(to);
+  const fDoc=await fRef.get(),tDoc=await tRef.get();
+  if(!fDoc.exists||!tDoc.exists)return alert('Cuenta no encontrada.');
+  if(fDoc.data().balance<amt)return alert('Saldo insuficiente.');
+  await fRef.update({balance:fDoc.data().balance-amt});
+  await tRef.update({balance:tDoc.data().balance+amt});
+  const code=generateCode();
+  await db.collection('transactions').add({from,to,amount:amt,code,timestamp:new Date().toISOString()});
+  document.getElementById('transfer-result').className='result success';
+  document.getElementById('transfer-result').style.display='block';
+  document.getElementById('transfer-result').innerHTML=`Transferencia completada. Código: <b>${code}</b>`;
+  loadAccounts();
+});
 
-        // Consultar nota
-        consultBtn.addEventListener('click', async () => {
-            const code = noteCode.value.trim().toUpperCase();
-            if (!code) return alert('Introduce un código.');
+// Canjear billetes
+document.getElementById('redeem-btn').addEventListener('click',async()=>{
+  const playerInput=document.getElementById('redeem-player').value.trim();
+  const code=document.getElementById('redeem-code').value.trim();
+  if(!playerInput||!code)return alert('Rellena todos los campos.');
+  const bRef=db.collection('bills').doc(code);const bDoc=await bRef.get();
+  if(!bDoc.exists)return alert('Billete no encontrado.');
+  const b=bDoc.data();
+  if(b.redeemed)return alert('Billete ya canjeado.');
+  if(new Date(b.expiresAt)<new Date())return alert('Billete caducado.');
 
-            try {
-                const doc = await db.collection('notes').doc(code).get();
-                if (!doc.exists) {
-                    consultResult.className = 'result error';
-                    consultResult.style.display = 'block';
-                    noteDisplay.textContent = 'No se encontró ninguna nota con ese código.';
-                    return;
-                }
+  // Buscar cuenta por nombre o por id
+  let accRef=null;
+  const qName=await db.collection('accounts').where('owner','==',playerInput).get();
+  if(!qName.empty) accRef=db.collection('accounts').doc(qName.docs[0].id);
+  else{
+    const qId=await db.collection('accounts').doc(playerInput).get();
+    if(qId.exists) accRef=qId.ref;
+  }
+  if(!accRef)return alert('Cuenta o jugador no encontrado.');
+  const doc=await accRef.get();
+  await accRef.update({balance:doc.data().balance+b.amount});
+  await bRef.update({redeemed:true});
+  await db.collection('transactions').add({from:'Billete',to:accRef.id,amount:b.amount,code,timestamp:new Date().toISOString()});
+  document.getElementById('redeem-result').className='result success';
+  document.getElementById('redeem-result').style.display='block';
+  document.getElementById('redeem-result').innerHTML=`Billete de ${b.amount} canjeado correctamente en la cuenta <b>${accRef.id}</b>.`;
+  loadAccounts();
+});
 
-                consultResult.className = 'result success';
-                consultResult.style.display = 'block';
-                noteDisplay.textContent = doc.data().content;
-                noteCode.value = '';
-            } catch (error) {
-                console.error('Error consultando nota:', error);
-                alert('Error al consultar la nota.');
-            }
-        });
+// Billetes activos
+document.getElementById('check-bills').addEventListener('click',async()=>{
+  const tbody=document.querySelector('#bills-table tbody');
+  tbody.innerHTML='<tr><td colspan="6">Cargando...</td></tr>';
+  const snap=await db.collection('bills').get();
+  tbody.innerHTML='';
+  snap.forEach(doc=>{
+    const b=doc.data();const exp=new Date(b.expiresAt);const estado=b.redeemed?'✅ Canjeado':(exp<new Date()?'❌ Caducado':'🟢 Activo');
+    tbody.innerHTML+=`<tr><td>${doc.id}</td><td>${b.from}</td><td>${b.amount}</td><td>${exp.toLocaleDateString()}</td><td>${estado}</td><td><button class="delete" onclick="deleteBill('${doc.id}')">Eliminar</button></td></tr>`;
+  });
+});
 
-        // Listar todas las notas con vista previa y borrar
-        loadNotesBtn.addEventListener('click', async () => {
-            notesList.innerHTML = '<p class="loading">Cargando...</p>';
+// Movimientos
+document.getElementById('load-movements').addEventListener('click',async()=>{
+  const tbody=document.querySelector('#movements-table tbody');
+  tbody.innerHTML='<tr><td colspan="6">Cargando...</td></tr>';
+  const snap=await db.collection('transactions').orderBy('timestamp','desc').limit(50).get();
+  tbody.innerHTML='';
+  snap.forEach(doc=>{
+    const t=doc.data();
+    tbody.innerHTML+=`<tr><td>${t.code}</td><td>${t.from}</td><td>${t.to}</td><td>${t.amount}</td><td>${new Date(t.timestamp).toLocaleString()}</td><td><button class="delete" onclick="deleteTransaction('${doc.id}')">Eliminar</button></td></tr>`;
+  });
+});
 
-            try {
-                const snapshot = await db.collection('notes').get();
-                if (snapshot.empty) {
-                    notesList.innerHTML = '<p>No hay notas guardadas.</p>';
-                    return;
-                }
+// Eliminar billete
+async function deleteBill(id){if(confirm('Eliminar billete?')){await db.collection('bills').doc(id).delete();document.getElementById('check-bills').click();}}
 
-                notesList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const noteDiv = document.createElement('div');
-                    noteDiv.style.display = 'flex';
-                    noteDiv.style.flexDirection = 'column';
-                    noteDiv.style.padding = '10px';
-                    noteDiv.style.marginBottom = '10px';
-                    noteDiv.style.border = '1px solid #ddd';
-                    noteDiv.style.borderRadius = '5px';
-                    noteDiv.style.backgroundColor = '#fefefe';
+// Eliminar transacción
+async function deleteTransaction(id){if(confirm('Eliminar transacción?')){await db.collection('transactions').doc(id).delete();document.getElementById('load-movements').click();}}
 
-                    noteDiv.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span><strong>${doc.id}</strong></span>
-                            <button style="background-color:#e74c3c;padding:5px 10px;border:none;border-radius:5px;color:white;cursor:pointer;">Borrar</button>
-                        </div>
-                        <div style="margin-top:5px; color:#555; white-space: pre-wrap;">${doc.data().content}</div>
-                    `;
-
-                    const deleteBtn = noteDiv.querySelector('button');
-                    deleteBtn.addEventListener('click', async () => {
-                        if (confirm(`¿Seguro que quieres borrar la nota ${doc.id}?`)) {
-                            try {
-                                await db.collection('notes').doc(doc.id).delete();
-                                noteDiv.remove();
-                            } catch (error) {
-                                alert('Error al borrar la nota.');
-                                console.error(error);
-                            }
-                        }
-                    });
-
-                    notesList.appendChild(noteDiv);
-                });
-            } catch (error) {
-                console.error('Error cargando notas:', error);
-                notesList.innerHTML = '<p>Error al cargar las notas.</p>';
-            }
-        });
-    </script>
+loadAccounts();
+</script>
 </body>
 </html>
-
