@@ -182,22 +182,24 @@ async function modifyMoney(id,isAdd){
 }
 
 // Retirar dinero → generar billete con imagen
+// Retirar dinero → generar billete con imagen y subir a ImgBB
 async function withdrawMoney(id){
   const amt = parseFloat(prompt('Cantidad a retirar:'));
   if(isNaN(amt) || amt <= 0) return;
+
   const ref = db.collection('accounts').doc(id);
   const doc = await ref.get();
   if(!doc.exists) return alert('Cuenta no encontrada');
   if(doc.data().balance < amt) return alert('Saldo insuficiente.');
 
-  const code = generateCode(); // Este será la ID de transacción
-  const exp = new Date(); exp.setDate(exp.getDate()+7);
+  const code = generateCode();
+  const exp = new Date(); exp.setDate(exp.getDate() + 7);
 
   await ref.update({balance: doc.data().balance - amt});
   await db.collection('bills').doc(code).set({from: id, amount: amt, expiresAt: exp.toISOString(), redeemed: false});
 
-  // --- Crear transacción con ID = código ---
-  await db.collection('transactions').doc(code).set({
+  // --- Crear transacción ---
+  await db.collection('transactions').add({
     from: id,
     to: 'Billete',
     amount: amt,
@@ -207,9 +209,9 @@ async function withdrawMoney(id){
 
   // --- Generar imagen ---
   const template = new Image();
-  template.src = 'billete_template.png'; // o la URL de raw de GitHub
+  template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png';
   template.crossOrigin = "anonymous";
-  template.onload = () => {
+  template.onload = async () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
     canvas.height = template.height;
@@ -221,28 +223,51 @@ async function withdrawMoney(id){
     ctx.textAlign = 'right';
     ctx.fillText(code, canvas.width - 20, canvas.height - 40);
 
-    const container = document.getElementById('account-result');
-    container.className='result success';
-    container.style.display='block';
-    container.innerHTML=`Billete generado correctamente.<br>
-      Caduca el ${exp.toLocaleDateString()}<br>
-      ID de transacción: <b>${code}</b><br>
-      <canvas id="billeteCanvas"></canvas><br>
-      <button id="copyLink">Copiar enlace</button>`;
+    const base64Image = canvas.toDataURL('image/png').split(',')[1]; // solo el contenido
 
-    const billeteCanvas = document.getElementById('billeteCanvas');
-    billeteCanvas.width = canvas.width;
-    billeteCanvas.height = canvas.height;
-    billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+    // --- Subir a ImgBB ---
+    const imgbbKey = 'e7dc41c59c89ae121e330a63d6d6c511'; // pon tu API key aquí
+    const formData = new FormData();
+    formData.append('image', base64Image);
+    formData.append('name', code);
 
-    document.getElementById('copyLink').addEventListener('click', () => {
-      const url = canvas.toDataURL('image/png');
-      navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
-    });
+    try {
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      const url = data.data.url; // enlace directo .png
+
+      const container = document.getElementById('account-result');
+      container.className = 'result success';
+      container.style.display = 'block';
+      container.innerHTML = `
+        Billete generado correctamente.<br>
+        Cantidad: <b>${amt}</b><br>
+        Caduca: ${exp.toLocaleDateString()}<br>
+        Código: <b>${code}</b><br>
+        <canvas id="billeteCanvas"></canvas><br>
+        <button id="copyLink">Copiar enlace</button>
+      `;
+
+      const billeteCanvas = document.getElementById('billeteCanvas');
+      billeteCanvas.width = canvas.width;
+      billeteCanvas.height = canvas.height;
+      billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+
+      document.getElementById('copyLink').addEventListener('click', ()=>{
+        navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+      });
+
+    } catch(err){
+      alert('Error subiendo billete a ImgBB: '+err.message);
+    }
   }
 
   loadAccounts();
 }
+
 
 
 
@@ -354,6 +379,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
