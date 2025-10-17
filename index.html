@@ -330,19 +330,58 @@ document.getElementById('redeem-btn').addEventListener('click',async()=>{
 });
 
 // Billetes activos
-document.getElementById('check-bills').addEventListener('click',async()=>{
-  const tbody=document.querySelector('#bills-table tbody');
-  tbody.innerHTML='<tr><td colspan="6">Cargando...</td></tr>';
-  const snap=await db.collection('bills').get();
-  tbody.innerHTML='';
-  snap.forEach(doc=>{
-    const b=doc.data();const exp=new Date(b.expiresAt);const estado=b.redeemed?'✅ Canjeado':(exp<new Date()?'❌ Caducado':'🟢 Activo');
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${doc.id}</td><td>${b.from}</td><td>${b.amount}</td><td>${exp.toLocaleDateString()}</td><td>${estado}</td>
-      <td><button onclick="deleteBill('${doc.id}')">Eliminar</button></td>`;
+document.getElementById('check-bills').addEventListener('click', async () => {
+  const tbody = document.querySelector('#bills-table tbody');
+  tbody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
+
+  const snap = await db.collection('bills').get();
+  tbody.innerHTML = '';
+
+  if (snap.empty) {
+    tbody.innerHTML = '<tr><td colspan="6">No hay billetes.</td></tr>';
+    return;
+  }
+
+  snap.forEach(doc => {
+    const b = doc.data();
+    const exp = new Date(b.expiresAt);
+    const now = new Date();
+    const estado = b.redeemed
+      ? '✅ Canjeado'
+      : exp < now
+      ? '❌ Caducado'
+      : '🟢 Activo';
+
+    // Calcular tiempo restante o tiempo desde que caducó
+    const diff = exp - now;
+    let tiempoRestante = '';
+    if (diff > 0) {
+      const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutos = Math.floor((diff / (1000 * 60)) % 60);
+      tiempoRestante = `${dias}d ${horas}h ${minutos}m restantes`;
+    } else {
+      const dias = Math.floor(-diff / (1000 * 60 * 60 * 24));
+      const horas = Math.floor((-diff / (1000 * 60 * 60)) % 24);
+      tiempoRestante = `Caducado hace ${dias}d ${horas}h`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${doc.id}</td>
+      <td>${b.from}</td>
+      <td>${b.amount}</td>
+      <td>
+        ${exp.toLocaleDateString()}<br>
+        <small style="color:#555;">${tiempoRestante}</small>
+      </td>
+      <td>${estado}</td>
+      <td><button onclick="deleteBill('${doc.id}')">Eliminar</button></td>
+    `;
     tbody.appendChild(tr);
   });
 });
+
 
 // Movimientos
 document.getElementById('load-movements').addEventListener('click',async()=>{
@@ -377,6 +416,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
