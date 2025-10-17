@@ -227,11 +227,11 @@ async function withdrawMoney(id) {
     ctx.textAlign = 'right';
     ctx.fillText(code, canvas.width - 20, canvas.height - 40);
 
-    const base64Image = canvas.toDataURL('image/png').split(',')[1];
+    const base64Image = canvas.toDataURL('image/png', 0.7).split(',')[1];
     const formData = new FormData();
     formData.append('image', base64Image);
 
-    const imgbbKey = 'e7dc41c59c89ae121e330a63d6d6c511';
+    const imgbbKey = 'TU_API_KEY_DE_IMGBB';
 
     try {
       const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
@@ -239,9 +239,23 @@ async function withdrawMoney(id) {
         body: formData
       });
       const data = await res.json();
-
-      if (!data.success) throw new Error('No se pudo subir la imagen');
+      if (!data.success) throw new Error(data.error?.message || 'No se pudo subir la imagen');
       const url = data.data.display_url;
+
+      // Calcular tiempo restante
+      const now = new Date();
+      const diff = exp - now;
+      let tiempoRestante = '';
+      if (diff > 0) {
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutos = Math.floor((diff / (1000 * 60)) % 60);
+        tiempoRestante = `${dias}d ${horas}h ${minutos}m restantes`;
+      } else {
+        const dias = Math.floor(-diff / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((-diff / (1000 * 60 * 60)) % 24);
+        tiempoRestante = `Caducado hace ${dias}d ${horas}h`;
+      }
 
       const container = document.getElementById('account-result');
       container.className = 'result success';
@@ -249,7 +263,7 @@ async function withdrawMoney(id) {
       container.innerHTML = `
         Billete generado correctamente.<br>
         Cantidad: <b>${amt}</b><br>
-        Caduca: ${exp.toLocaleDateString()}<br>
+        Caduca: ${exp.toLocaleDateString()} (<small>${tiempoRestante}</small>)<br>
         Código: <b>${code}</b><br>
         <img src="${url}" alt="Billete" style="max-width:100%;border-radius:10px;margin-top:10px;"><br>
         <button id="copyLink">Copiar enlace</button>
@@ -266,7 +280,6 @@ async function withdrawMoney(id) {
 
   loadAccounts();
 }
-
 
 
 // Eliminar cuenta
@@ -416,6 +429,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
