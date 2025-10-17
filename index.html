@@ -232,46 +232,42 @@ async function withdrawMoney(id){
     const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
     // --- Subir a ImgBB ---
-    const imgbbKey = 'e7dc41c59c89ae121e330a63d6d6c511';
-    const formData = new FormData();
-    formData.append('image', base64Image);
-    formData.append('name', code);
+    // --- Subir a ImgBB ---
+try {
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  
+  if(!data.success) throw new Error('No se pudo subir la imagen');
 
-    try {
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
+  const url = data.data.display_url; // <--- ESTE es el enlace directo .png que quieres
 
-      if(!data.success) throw new Error('No se pudo subir la imagen');
+  const container = document.getElementById('account-result');
+  container.className = 'result success';
+  container.style.display = 'block';
+  container.innerHTML = `
+    Billete generado correctamente.<br>
+    Cantidad: <b>${amt}</b><br>
+    Caduca: ${exp.toLocaleDateString()}<br>
+    Código: <b>${code}</b><br>
+    <canvas id="billeteCanvas"></canvas><br>
+    <button id="copyLink">Copiar enlace</button>
+  `;
 
-      const url = data.data.display_url; // enlace directo .png
+  const billeteCanvas = document.getElementById('billeteCanvas');
+  billeteCanvas.width = canvas.width;
+  billeteCanvas.height = canvas.height;
+  billeteCanvas.getContext('2d').drawImage(canvas,0,0);
 
-      const container = document.getElementById('account-result');
-      container.className = 'result success';
-      container.style.display = 'block';
-      container.innerHTML = `
-        Billete generado correctamente.<br>
-        Cantidad: <b>${amt}</b><br>
-        Caduca: ${exp.toLocaleDateString()}<br>
-        Código: <b>${code}</b><br>
-        <canvas id="billeteCanvas"></canvas><br>
-        <button id="copyLink">Copiar enlace</button>
-      `;
+  document.getElementById('copyLink').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+  });
 
-      const billeteCanvas = document.getElementById('billeteCanvas');
-      billeteCanvas.width = canvas.width;
-      billeteCanvas.height = canvas.height;
-      billeteCanvas.getContext('2d').drawImage(canvas,0,0);
-
-      document.getElementById('copyLink').addEventListener('click', ()=>{
-        navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
-      });
-
-    } catch(err){
-      alert('Error subiendo billete a ImgBB: '+err.message);
-    }
+} catch(err){
+  alert('Error subiendo billete a ImgBB: '+err.message);
+}
   };
 
   loadAccounts();
@@ -389,6 +385,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
