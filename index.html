@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Banco Central - Buscadores</title>
+<title>Banco Central - FiveM</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
 body{background:linear-gradient(135deg,#000000,#434343);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;}
@@ -39,7 +39,7 @@ footer{text-align:center;padding:15px;color:#7f8c8d;font-size:0.9rem;border-top:
 <body>
 <div class="container">
 <header>
-<h1>Banco Central - Buscadores</h1>
+<h1>Banco Central - FiveM</h1>
 <p>Gestiona cuentas, transferencias, billetes y movimientos</p>
 </header>
 
@@ -114,7 +114,7 @@ footer{text-align:center;padding:15px;color:#7f8c8d;font-size:0.9rem;border-top:
   </table>
 </div>
 </div>
-<footer>Banco Central - por Gato</footer>
+<footer>Banco Central - FiveM</footer>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
@@ -181,6 +181,7 @@ async function modifyMoney(id,isAdd){
   container.innerHTML=`Transacción completada correctamente.`;
 }
 
+// Retirar dinero → generar billete con imagen
 // Retirar dinero → generar billete con imagen y subir a ImgBB
 async function withdrawMoney(id){
   const amt = parseFloat(prompt('Cantidad a retirar:'));
@@ -194,14 +195,10 @@ async function withdrawMoney(id){
   const code = generateCode();
   const exp = new Date(); exp.setDate(exp.getDate() + 7);
 
-  await ref.update({ balance: doc.data().balance - amt });
-  await db.collection('bills').doc(code).set({
-    from: id,
-    amount: amt,
-    expiresAt: exp.toISOString(),
-    redeemed: false
-  });
+  await ref.update({balance: doc.data().balance - amt});
+  await db.collection('bills').doc(code).set({from: id, amount: amt, expiresAt: exp.toISOString(), redeemed: false});
 
+  // --- Crear transacción ---
   await db.collection('transactions').add({
     from: id,
     to: 'Billete',
@@ -214,7 +211,6 @@ async function withdrawMoney(id){
   const template = new Image();
   template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png';
   template.crossOrigin = "anonymous";
-
   template.onload = async () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
@@ -222,19 +218,17 @@ async function withdrawMoney(id){
     const ctx = canvas.getContext('2d');
     ctx.drawImage(template, 0, 0);
 
-    // Escribir el código y la cantidad en la esquina inferior derecha
-    ctx.font = 'bold 42px Arial';
+    ctx.font = 'bold 48px Arial';
     ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
-    ctx.fillText(`Código: ${code}`, canvas.width - 40, canvas.height - 80);
-    ctx.fillText(`Cantidad: ${amt}`, canvas.width - 40, canvas.height - 30);
+    ctx.fillText(code, canvas.width - 20, canvas.height - 40);
 
-    const base64Image = canvas.toDataURL('image/png').split(',')[1];
+    const base64Image = canvas.toDataURL('image/png').split(',')[1]; // solo el contenido
 
     // --- Subir a ImgBB ---
     // --- Subir a ImgBB ---
 try {
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${e7dc41c59c89ae121e330a63d6d6c511}`, {
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
     method: 'POST',
     body: formData
   });
@@ -268,11 +262,22 @@ try {
 } catch(err){
   alert('Error subiendo billete a ImgBB: '+err.message);
 }
-  };
+      const billeteCanvas = document.getElementById('billeteCanvas');
+      billeteCanvas.width = canvas.width;
+      billeteCanvas.height = canvas.height;
+      billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+
+      document.getElementById('copyLink').addEventListener('click', ()=>{
+        navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
+      });
+
+    } catch(err){
+      alert('Error subiendo billete a ImgBB: '+err.message);
+    }
+  }
 
   loadAccounts();
 }
-
 
 
 
@@ -385,12 +390,6 @@ loadAccounts();
 </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
