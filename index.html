@@ -181,7 +181,6 @@ async function modifyMoney(id,isAdd){
   container.innerHTML=`Transacción completada correctamente.`;
 }
 
-// Retirar dinero → generar billete con imagen
 // Retirar dinero → generar billete con imagen y subir a ImgBB
 async function withdrawMoney(id){
   const amt = parseFloat(prompt('Cantidad a retirar:'));
@@ -195,10 +194,14 @@ async function withdrawMoney(id){
   const code = generateCode();
   const exp = new Date(); exp.setDate(exp.getDate() + 7);
 
-  await ref.update({balance: doc.data().balance - amt});
-  await db.collection('bills').doc(code).set({from: id, amount: amt, expiresAt: exp.toISOString(), redeemed: false});
+  await ref.update({ balance: doc.data().balance - amt });
+  await db.collection('bills').doc(code).set({
+    from: id,
+    amount: amt,
+    expiresAt: exp.toISOString(),
+    redeemed: false
+  });
 
-  // --- Crear transacción ---
   await db.collection('transactions').add({
     from: id,
     to: 'Billete',
@@ -211,6 +214,7 @@ async function withdrawMoney(id){
   const template = new Image();
   template.src = 'https://raw.githubusercontent.com/G4T0cm/notas/main/billete_template.png';
   template.crossOrigin = "anonymous";
+
   template.onload = async () => {
     const canvas = document.createElement('canvas');
     canvas.width = template.width;
@@ -218,50 +222,44 @@ async function withdrawMoney(id){
     const ctx = canvas.getContext('2d');
     ctx.drawImage(template, 0, 0);
 
-    ctx.font = 'bold 48px Arial';
+    // Escribir el código y la cantidad en la esquina inferior derecha
+    ctx.font = 'bold 42px Arial';
     ctx.fillStyle = 'red';
     ctx.textAlign = 'right';
-    ctx.fillText(code, canvas.width - 20, canvas.height - 40);
+    ctx.fillText(`Código: ${code}`, canvas.width - 40, canvas.height - 80);
+    ctx.fillText(`Cantidad: ${amt}`, canvas.width - 40, canvas.height - 30);
 
-    const base64Image = canvas.toDataURL('image/png').split(',')[1]; // solo el contenido
+    const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
     // --- Subir a ImgBB ---
-    // --- Subir a ImgBB ---
-try {
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-    method: 'POST',
-    body: formData
-  });
-  const data = await res.json();
-  
-  if(!data.success) throw new Error('No se pudo subir la imagen');
+    const imgbbKey = '🔑e7dc41c59c89ae121e330a63d6d6c511🔑';
+    const formData = new FormData();
+    formData.append('image', base64Image);
+    formData.append('name', code);
 
-  const url = data.data.display_url; // <--- ESTE es el enlace directo .png que quieres
+    try {
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
 
-  const container = document.getElementById('account-result');
-  container.className = 'result success';
-  container.style.display = 'block';
-  container.innerHTML = `
-    Billete generado correctamente.<br>
-    Cantidad: <b>${amt}</b><br>
-    Caduca: ${exp.toLocaleDateString()}<br>
-    Código: <b>${code}</b><br>
-    <canvas id="billeteCanvas"></canvas><br>
-    <button id="copyLink">Copiar enlace</button>
-  `;
+      if(!data.success) throw new Error('No se pudo subir la imagen');
 
-  const billeteCanvas = document.getElementById('billeteCanvas');
-  billeteCanvas.width = canvas.width;
-  billeteCanvas.height = canvas.height;
-  billeteCanvas.getContext('2d').drawImage(canvas,0,0);
+      const url = data.data.display_url; // enlace directo .png
 
-  document.getElementById('copyLink').addEventListener('click', ()=>{
-    navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles'));
-  });
+      const container = document.getElementById('account-result');
+      container.className = 'result success';
+      container.style.display = 'block';
+      container.innerHTML = `
+        Billete generado correctamente.<br>
+        Cantidad: <b>${amt}</b><br>
+        Caduca: ${exp.toLocaleDateString()}<br>
+        Código: <b>${code}</b><br>
+        <canvas id="billeteCanvas"></canvas><br>
+        <button id="copyLink">Copiar enlace</button>
+      `;
 
-} catch(err){
-  alert('Error subiendo billete a ImgBB: '+err.message);
-}
       const billeteCanvas = document.getElementById('billeteCanvas');
       billeteCanvas.width = canvas.width;
       billeteCanvas.height = canvas.height;
@@ -274,10 +272,11 @@ try {
     } catch(err){
       alert('Error subiendo billete a ImgBB: '+err.message);
     }
-  }
+  };
 
   loadAccounts();
 }
+
 
 
 
@@ -390,6 +389,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
