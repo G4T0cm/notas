@@ -232,7 +232,7 @@ async function withdrawMoney(id){
     const base64Image = canvas.toDataURL('image/png').split(',')[1];
 
     // --- Subir a ImgBB ---
-    const imgbbKey = '🔑e7dc41c59c89ae121e330a63d6d6c511🔑';
+    const imgbbKey = 'e7dc41c59c89ae121e330a63d6d6c511';
     const formData = new FormData();
     formData.append('image', base64Image);
     formData.append('name', code);
@@ -389,6 +389,7 @@ loadAccounts();
 </script>
 </body>
 </html>
+
 
 
 
